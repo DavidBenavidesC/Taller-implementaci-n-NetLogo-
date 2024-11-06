@@ -1,0 +1,134 @@
+;MOdelado ecosistema depredador-presa
+globals [
+  max-sheep    ; Número máximo de ovejas
+]
+
+; Definir razas
+breed [ sheep una-oveja ]
+breed [ wolves un-lobo ]
+
+; Propiedades de los agentes
+turtles-own [
+  es-oveja?   ; Define si el agente es una oveja
+  hambre      ; La cantidad de hambre del lobo
+]
+
+; Código de Setup: Inicializa la simulación
+to setup
+  clear-all
+  ifelse netlogo-web? [ set max-sheep 10000 ] [ set max-sheep 30000 ]
+  
+  ; Establecer todo el fondo en verde
+  ask patches [ set pcolor green ]
+  
+  ; Crear las ovejas con el número definido por el usuario
+  create-sheep initial-number-sheep  ; crear las ovejas
+  [
+    set shape "sheep"              ; Definir la forma de la oveja
+    set color white                ; Color de la oveja
+    set size 1.5                   ; Tamaño de la oveja
+    set label-color blue - 2       ; Color de la etiqueta (si la usas)
+    setxy random-xcor random-ycor  ; Posición aleatoria en el mundo
+  ]
+  
+  ; Crear los lobos con el número definido por el usuario
+  create-wolves initial-number-wolves  ; crear los lobos
+  [
+    set shape "wolf"               ; Definir la forma del lobo
+    set color black                ; Color del lobo
+    set size 2                     ; Tamaño del lobo
+    set hambre 0                   ; Inicializar el hambre en 0
+    setxy random-xcor random-ycor  ; Posición aleatoria en el mundo
+  ]
+  
+  ; Inicializar el gráfico
+  set-current-plot "Población"
+  set-current-plot-pen "sheep-pen"
+  plot count sheep  ; Iniciar con el valor de 0 para las ovejas
+  
+  set-current-plot-pen "wolves-pen"
+  plot count wolves  ; Iniciar con el valor de 0 para los lobos
+  
+  reset-ticks
+end
+
+; Código de Go: Ejecuta la simulación en cada tick
+to go
+  ; Detener el modelo si no hay lobos y no hay ovejas
+  if not any? turtles [ stop ]
+  ; Detener el modelo si no hay lobos y el número de ovejas es muy grande
+  if not any? wolves and count sheep > max-sheep [ user-message "Las ovejas han heredado la Tierra" stop ]
+  
+  ; Movimiento de las ovejas
+  ask sheep [
+    move
+    reproduce-sheep  ; Reproducir ovejas al cruzarse
+  ]
+  
+  ; Movimiento de los lobos
+  ask wolves [
+    move
+    set hambre hambre + 1  ; Aumentar el hambre con el tiempo
+    eat-sheep  ; Los lobos matan ovejas
+    death  ; Los lobos mueren si alcanzan el nivel de hambre máximo definido por el slider
+  ]
+  
+  ; Actualizar el gráfico
+  set-current-plot "Población"
+  
+  ; Graficar el número de ovejas
+  set-current-plot-pen "sheep-pen"
+  plot count sheep
+  
+  ; Graficar el número de lobos
+  set-current-plot-pen "wolves-pen"
+  plot count wolves
+  
+  tick
+end
+
+; Movimiento de los agentes
+to move  ; Procedimiento de movimiento de las ovejas y lobos
+  rt random 50
+  lt random 50
+  fd 1
+end
+
+; Caza de ovejas por parte de los lobos
+to eat-sheep  ; Procedimiento para que los lobos maten ovejas
+  let prey one-of sheep-here                    ; Agarra una oveja aleatoria
+  if prey != nobody  [                          ; Si la consiguió,
+    ask prey [ die ]                            ; la mata, y...
+    set hambre 0                                ; Reiniciar el hambre
+  ]
+end
+
+; Muerte por hambre del lobo
+to death  ; Procedimiento para la muerte por hambre
+  if hambre >= nivel-de-hambre-lobo [   ; Si el hambre alcanza el valor del slider
+    die  ; El lobo muere
+  ]
+end
+
+; Reproducción de las ovejas cuando se cruzan
+to reproduce-sheep
+  let mate one-of sheep in-radius 1  ; Encuentra una oveja dentro del radio de 1
+  if mate != nobody [
+    if random-float 100 < probabilidad-reproduccion-ovejas [  ; Comprobar probabilidad de reproducción
+      hatch 1 [ set color white ; Crear una nueva oveja
+                set size 1.5
+                setxy random-xcor random-ycor  ; Posicionar la nueva oveja en un lugar aleatorio
+              ]
+    ]
+  ]
+end
+
+;datos por implementar:
+;Sliders:
+;initial-number-sheep: Número inicial de ovejas (valor entre 1 y 1000).
+;initial-number-wolves: Número inicial de lobos (valor entre 1 y 1000).
+;nivel-de-hambre-lobo: Umbral de hambre para los lobos (valor entre 1 y 100).
+;probabilidad-reproduccion-ovejas: Probabilidad de reproducción de las ovejas (valor entre 0 y 100).
+;Plot:
+;Pluma 1: Muestra la cantidad de ovejas.
+;Pluma 2: Muestra la cantidad de lobos.

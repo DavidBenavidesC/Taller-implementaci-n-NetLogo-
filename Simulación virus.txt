@@ -1,0 +1,105 @@
+;simulación virus
+turtles-own [estado tiempo-infectado]
+
+to setup
+  clear-all
+  reset-ticks
+  create-turtles cantidad-personas [
+    setxy random-xcor random-ycor       ; Coloca a cada tortuga en una posición aleatoria
+    set estado "sano"                   ; Todas las tortugas inician sanas
+    set color green                     ; Color verde para tortugas sanas
+  ]
+  
+  ; Infecta a la cantidad especificada de tortugas al inicio
+  ask n-of cantidad-infectados-iniciales turtles [
+    set estado "infectado"
+    set color red
+    set tiempo-infectado 0
+  ]
+  
+  ; Inicializa el gráfico con las cantidades de cada estado
+  set-current-plot "Evolución de la enfermedad"
+  set-current-plot-pen "Sanos"
+  plot count turtles with [estado = "sano"]
+  set-current-plot-pen "Infectados"
+  plot count turtles with [estado = "infectado"]
+  set-current-plot-pen "Curados"
+  plot count turtles with [estado = "curado"]
+  set-current-plot-pen "Muertos"
+  plot count turtles with [estado = "muerto"]
+end
+
+to go
+  move-turtles               ; Las tortugas se mueven aleatoriamente
+  infect                     ; Las tortugas sanas pueden infectarse si están cerca de infectados
+  recover-or-die             ; Las tortugas infectadas evalúan si se recuperan o mueren
+  update-plot                ; Actualiza el gráfico con los nuevos datos
+  tick                       ; Avanza el tiempo
+end
+
+to move-turtles
+  ask turtles with [estado != "muerto"] [ ; Solo las tortugas no muertas se mueven
+    rt random 360
+    fd 1
+  ]
+end
+
+to infect
+  ask turtles with [estado = "sano"] [
+    if any? turtles in-radius 1 with [estado = "infectado"] [
+      if random-float 1 < probabilidad-contagio [
+        set estado "infectado"
+        set color red
+        set tiempo-infectado 0
+      ]
+    ]
+  ]
+end
+
+to recover-or-die
+  ask turtles with [estado = "infectado"] [
+    set tiempo-infectado tiempo-infectado + 1
+    if random-float 1 < probabilidad-mortalidad [
+      set estado "muerto"
+      set color gray
+    ]
+    if estado = "infectado" and random-float 1 < probabilidad-recuperacion [
+      set estado "curado"
+      set color blue
+    ]
+  ]
+end
+
+; Actualiza los datos en el gráfico
+to update-plot
+  set-current-plot "Evolución de la enfermedad"
+  
+  ; Actualiza el gráfico con el conteo de tortugas por estado
+  set-current-plot-pen "Sanos"
+  plot count turtles with [estado = "sano"]
+  set-current-plot-pen "Infectados"
+  plot count turtles with [estado = "infectado"]
+  set-current-plot-pen "Curados"
+  plot count turtles with [estado = "curado"]
+  set-current-plot-pen "Muertos"
+  plot count turtles with [estado = "muerto"]
+end
+;Para que funcione la simulación tienen que implementarse los siguientes botones:
+;Botones:
+
+;setup: Inicializa la simulación, creando tortugas y asignando su estado.
+;go: Ejecuta un paso de la simulación, moviendo las tortugas, infectando, curando, matando y actualizando el gráfico.
+;Sliders:
+
+;cantidad-personas: Define el número de tortugas (rango: 10 a 1000, por defecto 100).
+;cantidad-infectados-iniciales: Define cuántas tortugas están infectadas al inicio (rango: 1 a 100, por defecto 5).
+;probabilidad-contagio: Probabilidad de contagio al contacto con un infectado (rango: 0 a 1, por defecto 0.3).
+;probabilidad-mortalidad: Probabilidad de que una tortuga infectada muera (rango: 0 a 1, por defecto 0.05).
+;probabilidad-recuperacion: Probabilidad de que una tortuga infectada se recupere (rango: 0 a 1, por defecto 0.1).
+;Plots:
+
+;Evolución de la enfermedad: Muestra la cantidad de tortugas en los estados "sano", "infectado", "curado" y "muerto" a lo largo del tiempo.
+;Sanos (verde)
+;Infectados (rojo)
+;Curados (azul)
+;Muertos (gris)
